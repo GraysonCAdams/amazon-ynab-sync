@@ -1,0 +1,21 @@
+{
+  "name": "amazon-ynab-sync",
+  "version": "1.0.0",
+  "description": "Scans emails (IMAP) for Amazon order confirmations and syncs with YNAB (adds new transaction or syncs to existing)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "import",
+    "link",
+    "history",
+    "details",
+    "download"
+  ],
+  "author": "GraysonCAdams",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}
