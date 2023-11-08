@@ -40,7 +40,7 @@ For iCloud emails, make sure to put in your iCloud email address, versus any ema
 
 - Due to YNAB limitations, pending transactions are not supported. You must enter them as scheduled transactions before they can be considered.
 
-- After initial start-up, this matches only when new emails are received, _that_ is the trigger.
+- After initial start-up, this matches only when new order emails are received, _that_ is the trigger.
 
 ## How do I check old orders?
 
