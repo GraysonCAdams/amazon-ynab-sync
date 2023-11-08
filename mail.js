@@ -2,12 +2,16 @@ import IMAP from "node-imap";
 import * as cheerio from "cheerio";
 import quotedPrintable from "quoted-printable";
 
-export const isAmazonEmail = ({ subject }) =>
+const HISTORICAL_SEARCH_NUM_EMAILS = parseInt(
+  process.env.HISTORICAL_SEARCH_NUM_EMAILS
+);
+
+const isAmazonEmail = ({ subject }) =>
   subject.includes('Your Amazon.com order of "') &&
   !subject.includes("has shipped") &&
   !subject.includes("has been canceled");
 
-export const scanEmail = (email) => {
+const scanEmail = (email) => {
   const { from, subject, body, attributes } = email;
 
   if (!isAmazonEmail(email)) {
@@ -20,7 +24,9 @@ export const scanEmail = (email) => {
   const $ = cheerio.load(body.replace(/"x_/g, '"'));
 
   try {
-    const amount = parseFloat($('table[id$="costBreakdownRight"] td').text().trim().slice(1));
+    const amount = parseFloat(
+      $('table[id$="costBreakdownRight"] td').text().trim().slice(1)
+    );
 
     const items = [];
     const itemRows = $('table[id$="itemDetails"] tr').toArray();
@@ -35,7 +41,7 @@ export const scanEmail = (email) => {
         title += "..";
       }
       items.push(title);
-    };
+    }
 
     const date = new Date(attributes.date.setHours(0, 0, 0, 0));
 
@@ -43,7 +49,7 @@ export const scanEmail = (email) => {
       `${date} order totaling ${amount}, with ${
         items.length
       } item(s): ${items.join(", ")}`
-    )
+    );
 
     return {
       date,
@@ -56,7 +62,7 @@ export const scanEmail = (email) => {
   }
 };
 
-export const readEmail = (imapMsg, readBody = true) =>
+const readEmail = (imapMsg, readBody = true) =>
   new Promise((resolve, reject) => {
     let headers = null;
     let body = null;
@@ -91,12 +97,12 @@ export const readEmail = (imapMsg, readBody = true) =>
           body,
         });
       } else {
-        reject()
+        reject();
       }
     });
   });
 
-export const fetchOrderEmails = async (seq, startIndex, endIndex) =>
+const fetchOrderEmails = async (seq, startIndex, endIndex) =>
   new Promise((resolve, reject) => {
     const fetch = seq.fetch(`${startIndex}:${endIndex}`, {
       bodies: ["HEADER.FIELDS (FROM SUBJECT)", "TEXT"],
@@ -118,3 +124,110 @@ export const fetchOrderEmails = async (seq, startIndex, endIndex) =>
       reject(err);
     });
   });
+
+export const historicalSearch = async (imap, ynab, box) =>
+  new Promise((resolve) => {
+    console.log(
+      `Searching back over last ${HISTORICAL_SEARCH_NUM_EMAILS} emails...`
+    );
+
+    const endIndex = box.messages.total;
+    const startIndex = endIndex - (HISTORICAL_SEARCH_NUM_EMAILS - 1);
+    const fetch = imap.seq.fetch(`${startIndex}:${endIndex}`, {
+      bodies: ["HEADER.FIELDS (FROM SUBJECT)"],
+      struct: true,
+    });
+
+    const emailFetches = [];
+    const amazonMsgSeqNums = [];
+    let processedEmails = 0;
+
+    fetch.on("message", (imapMsg, seqno) => {
+      emailFetches.push(
+        new Promise(async (resolve) => {
+          try {
+            const email = await readEmail(imapMsg, false);
+            if (isAmazonEmail(email)) amazonMsgSeqNums.push(seqno);
+            processedEmails++;
+            console.log(
+              `${processedEmails} emails collected... Limit: ${HISTORICAL_SEARCH_NUM_EMAILS}`
+            );
+          } catch (e) {
+            console.error(e0);
+          }
+          resolve();
+        })
+      );
+    });
+
+    fetch.on("error", (err) => {
+      throw new Error(err);
+    });
+
+    fetch.once("end", async () => {
+      await Promise.all(emailFetches);
+
+      const amazonEmailCount = amazonMsgSeqNums.length;
+      console.info(
+        `${amazonEmailCount} Amazon order confirmation emails found`
+      );
+
+      const orders = [];
+
+      const emailScans = [];
+
+      amazonMsgSeqNums.forEach((seqno) => {
+        emailScans.push(
+          new Promise(async (resolve) => {
+            try {
+              const [email] = await fetchOrderEmails(imap.seq, seqno, seqno);
+              orders.push(scanEmail(email));
+            } catch (e) {
+              console.error(e);
+            }
+            resolve();
+          })
+        );
+      });
+
+      await Promise.all(emailScans);
+
+      console.log("Finished scanning old emails successfully!");
+
+      orders.sort(function (a, b) {
+        return new Date(a.date) - new Date(b.date);
+      });
+
+      const sinceDate = orders[0].date;
+      await ynab.fetchTransactions(sinceDate);
+      const matches = await ynab.matchTransactions(orders);
+      await ynab.updateTransactions(matches);
+
+      resolve();
+    });
+  });
+
+export const watchInbox = (imap, ynab, box) => {
+  imap.on("mail", async (newEmailCount) => {
+    console.log(`${newEmailCount} new email(s), scanning contents...`);
+    const endIndex = box.messages.total;
+    const startIndex = endIndex - (newEmailCount - 1);
+    try {
+      const orders = [];
+
+      const emails = await fetchOrderEmails(imap.seq, startIndex, endIndex);
+      for (const email of emails) {
+        const scannedEmail = scanEmail(email)
+        if(scannedEmail) orders.push(scannedEmail)
+      }
+
+      if (orders.length > 0) {
+        await ynab.fetchTransactions();
+        const matches = await ynab.matchTransactions(orders);
+        await ynab.updateTransactions(matches);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+};
