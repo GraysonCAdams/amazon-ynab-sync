@@ -7,7 +7,7 @@ const HISTORICAL_SEARCH_NUM_EMAILS = parseInt(
 );
 
 const isAmazonEmail = ({ subject }) =>
-  subject.includes('Your Amazon.com order of "') &&
+  subject.includes('Your Amazon.com order') &&
   !subject.includes("has shipped") &&
   !subject.includes("has been canceled");
 
