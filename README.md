@@ -18,7 +18,7 @@ IMAP_INCOMING_PORT=993
 IMAP_TLS=true
 IMAP_INBOX_NAME=INBOX
 
-HISTORICAL_SEARCH_NUM_EMAILS=1000
+HISTORICAL_SEARCH_NUM_EMAILS=500
 
 YNAB_TOKEN=yourtokenhere
 YNAB_BUDGET_ID=123456-123456-12356-12356
@@ -26,7 +26,7 @@ YNAB_ACCEPTABLE_DATE_DIFFERENCE=6
 YNAB_ACCEPTABLE_DOLLAR_DIFFERENCE=0.5
 ```
 
-`HISTORICAL_SEARCH_NUM_EMAILS` is the number of existing emails to scan in your inbox.
+`HISTORICAL_SEARCH_NUM_EMAILS` is the number of existing emails to scan in your inbox. It is recommended to leave this at around 100-500 depending on how busy your inbox is, so that if the application restarts, it loads recent order confirmations into cache if transactions haven't posted yet.
 
 `YNAB_ACCEPTABLE_DATE_DIFFERENCE` is the number of days a transaction out a transaction can be from the order date to be considered for a match.
 
@@ -43,8 +43,6 @@ For iCloud emails, make sure to put in your iCloud email address, versus any ema
 - After initial start-up, this matches only when new order emails are received, _that_ is the trigger.
 
 ## How do I check old orders?
-
-If you would like to scan just a few past orders, the recommended way is to forward old email confirmation emails (subject example) to yourself and monitor logs to confirm they are being scanned.
 
 If you have a bunch that you would like imported, you may use the historical email search feature, which will scan old emails up to a configured amount, and match those _first_ before moving onto watching for new emails. **When turned on, it will load these emails into the cache on every start-up, so be aware of that.**
 
