@@ -40,8 +40,6 @@ For iCloud emails, make sure to put in your iCloud email address, versus any ema
 
 - Due to YNAB limitations, pending transactions are not supported. You must enter them as scheduled transactions before they can be considered.
 
-- After initial start-up, this matches only when new order emails are received, _that_ is the trigger.
-
 ## How do I check old orders?
 
 If you have a bunch that you would like imported, you may increase the historical email search count (see Environemnt Variables), which will scan old emails up to a configured amount, and match those _first_ before moving onto watching for new emails. **When turned on, it will load these emails into the cache on every start-up, so be aware of that.**
