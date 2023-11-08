@@ -44,7 +44,7 @@ For iCloud emails, make sure to put in your iCloud email address, versus any ema
 
 ## How do I check old orders?
 
-If you have a bunch that you would like imported, you may use the historical email search feature, which will scan old emails up to a configured amount, and match those _first_ before moving onto watching for new emails. **When turned on, it will load these emails into the cache on every start-up, so be aware of that.**
+If you have a bunch that you would like imported, you may increase the historical email search count (see Environemnt Variables), which will scan old emails up to a configured amount, and match those _first_ before moving onto watching for new emails. **When turned on, it will load these emails into the cache on every start-up, so be aware of that.**
 
 ## How do I stop it from updating a transaction?
 
