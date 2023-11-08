@@ -23,11 +23,33 @@ const INBOX_NAME = process.env.IMAP_INBOX_NAME || "INBOX";
     imap.openBox(INBOX_NAME, true, async (err, box) => {
       if (err) throw err;
 
-      await historicalSearch(imap, ynab, box);
+      const orders = [];
+
+      await historicalSearch(imap, ynab, box, orders);
 
       console.log("Listening to mailbox for new emails...");
 
-      watchInbox(imap, ynab, box)
+      watchInbox(imap, ynab, box, orders);
+
+      setInterval(async () => {
+        console.log(
+          "Checking for new Amazon transactions to compare transaction cache against order cache..."
+        );
+
+        try {
+          await ynab.fetchTransactions();
+          const matches = await ynab.matchTransactions(orders);
+          if (matches.length > 0) await ynab.updateTransactions(matches);
+        } catch (e) {
+          console.error(e);
+        }
+
+        console.log(
+          `Status: ${ynab.getCachedTransactionCount()} Amazon transactions cached, ${
+            orders.length
+          } orders cached`
+        );
+      }, 30000);
     });
   });
 

@@ -40,8 +40,11 @@ const scanEmail = (email) => {
         if (title.endsWith(",")) title = title.slice(0, -1);
         title += "..";
       }
+      if(title.length === 0) continue
       items.push(title);
     }
+
+    if(items.length === 0) return
 
     const date = new Date(attributes.date.setHours(0, 0, 0, 0));
 
@@ -125,7 +128,7 @@ const fetchOrderEmails = async (seq, startIndex, endIndex) =>
     });
   });
 
-export const historicalSearch = async (imap, ynab, box) =>
+export const historicalSearch = async (imap, ynab, box, orders) =>
   new Promise((resolve) => {
     console.log(
       `Searching back over last ${HISTORICAL_SEARCH_NUM_EMAILS} emails...`
@@ -172,8 +175,6 @@ export const historicalSearch = async (imap, ynab, box) =>
         `${amazonEmailCount} Amazon order confirmation emails found`
       );
 
-      const orders = [];
-
       const emailScans = [];
 
       amazonMsgSeqNums.forEach((seqno) => {
@@ -207,24 +208,16 @@ export const historicalSearch = async (imap, ynab, box) =>
     });
   });
 
-export const watchInbox = (imap, ynab, box) => {
+export const watchInbox = (imap, ynab, box, orders) => {
   imap.on("mail", async (newEmailCount) => {
     console.log(`${newEmailCount} new email(s), scanning contents...`);
     const endIndex = box.messages.total;
     const startIndex = endIndex - (newEmailCount - 1);
     try {
-      const orders = [];
-
       const emails = await fetchOrderEmails(imap.seq, startIndex, endIndex);
       for (const email of emails) {
         const scannedEmail = scanEmail(email)
         if(scannedEmail) orders.push(scannedEmail)
-      }
-
-      if (orders.length > 0) {
-        await ynab.fetchTransactions();
-        const matches = await ynab.matchTransactions(orders);
-        await ynab.updateTransactions(matches);
       }
     } catch (e) {
       console.error(e);

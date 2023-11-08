@@ -34,6 +34,8 @@ export default class YNAB {
     this.budget = budget;
   };
 
+  getCachedTransactionCount = () => Object.keys(this.transactions).length;
+
   fetchTransactions = async (sinceDate = new Date()) => {
     const { transactions, server_knowledge } = (
       await ynabAPI.transactions.getTransactions(
@@ -44,22 +46,27 @@ export default class YNAB {
       )
     ).data;
 
-    if (this.transactionsServerKnowledge)
-      console.info(`Cached ${transactions.length} new transactions from YNAB`);
-    else
-      console.info(
-        `Cached ${transactions.length} historical transactions from YNAB`
-      );
-
     this.transactionsServerKnowledge = server_knowledge;
 
+    let newTransactionsCount = 0;
     transactions
       .filter(
         (t) =>
           t.payee_name.toLowerCase().includes("amazon") &&
           (typeof t.memo !== "string" || t.memo.length == 0)
       )
-      .forEach((t) => (this.transactions[t.id] = t));
+      .forEach((t) => {
+        if (t.deleted && t.id in this.transactions)
+          delete this.transactions[t.id];
+        else {
+          this.transactions[t.id] = t;
+          newTransactionsCount++;
+        }
+      });
+
+    console.info(
+      `Cached ${newTransactionsCount} historical Amazon transactions from YNAB (pending memo)`
+    );
   };
 
   matchTransactions = (orders) => {
@@ -143,6 +150,6 @@ export default class YNAB {
         };
       }),
     });
-    console.log(`Added order details to ${matches.length} YNAB transactions`);
+    console.log(`Added order details to ${matches.length} Amazon transactions`);
   };
 }
