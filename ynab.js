@@ -36,11 +36,11 @@ export default class YNAB {
 
   getCachedTransactionCount = () => Object.keys(this.transactions).length;
 
-  fetchTransactions = async (sinceDate = new Date()) => {
+  fetchTransactions = async (sinceDate = undefined) => {
     const { transactions, server_knowledge } = (
       await ynabAPI.transactions.getTransactions(
         this.budget.id,
-        sinceDate.toISOString().split("T")[0],
+        sinceDate ? sinceDate.toISOString().split("T")[0] : undefined,
         undefined,
         this.transactionsServerKnowledge
       )
