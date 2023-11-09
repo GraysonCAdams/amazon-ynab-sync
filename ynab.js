@@ -78,6 +78,8 @@ export default class YNAB {
       for (const [transactionId, transaction] of Object.entries(
         this.transactions
       )) {
+        if (transaction.memo && transaction.memo.length > 0) continue;
+
         const dateDifference = Math.abs(
           order.date - new Date(transaction.date)
         );
@@ -147,7 +149,7 @@ export default class YNAB {
         return {
           id,
           memo,
-          approved: false
+          approved: false,
         };
       }),
     });
