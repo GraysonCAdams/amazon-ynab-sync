@@ -1,5 +1,6 @@
 import "dotenv/config";
 import ynab from "ynab";
+import { dollarFormat } from "./index.js";
 
 const ynabAPI = new ynab.API(process.env.YNAB_TOKEN);
 
@@ -17,6 +18,11 @@ export default class YNAB {
   budget = null;
   transactionsServerKnowledge = undefined;
   transactions = {}; // TODO: does not get updated on memo updates
+
+  static prettyTransaction = (t) => {
+    const amount = dollarFormat(t.amount / 1000);
+    return `${t.payee_name} transaction on ${t.date} of ${amount}`;
+  };
 
   init = async () => {
     console.log("Connecting to YNAB...");
@@ -56,17 +62,15 @@ export default class YNAB {
           (typeof t.memo !== "string" || t.memo.length == 0)
       )
       .forEach((t) => {
-        if (t.deleted && t.id in this.transactions)
+        if (t.deleted && t.id in this.transactions) {
           delete this.transactions[t.id];
-        else {
+          console.log(`Deleting transaction: ${YNAB.prettyTransaction(t)}`);
+        } else {
           this.transactions[t.id] = t;
           newTransactionsCount++;
+          console.log(`Caching transaction: ${YNAB.prettyTransaction(t)}`);
         }
       });
-
-    console.info(
-      `Cached ${newTransactionsCount} historical Amazon transactions from YNAB (pending memo)`
-    );
   };
 
   matchTransactions = (orders) => {
@@ -135,7 +139,6 @@ export default class YNAB {
       });
     }
 
-    console.log(`Found new ${finalMatches.length} YNAB <-> Amazon matches`);
     return finalMatches;
   };
 
@@ -145,7 +148,11 @@ export default class YNAB {
       transactions: matches.map((m) => {
         const id = m.transactionId;
         const memo = m.order.items.join(", ");
-        this.transactions[id].memo = memo;
+        const transaction = this.transactions[id];
+        transaction.memo = memo;
+        console.log(
+          `Adding memo "${memo} to ${YNAB.prettyTransaction(transaction)}`
+        );
         return {
           id,
           memo,
@@ -153,6 +160,17 @@ export default class YNAB {
         };
       }),
     });
-    console.log(`Added order details to ${matches.length} Amazon transactions`);
+  };
+
+  matchAndUpdate = async (orders) => {
+    const matches = this.matchTransactions(orders);
+    if (matches.length > 0) {
+      await this.updateTransactions(matches);
+      console.log(
+        `Status: ${this.getCachedTransactionCount()} Amazon transactions cached, ${
+          orders.length
+        } order emails cached`
+      );
+    }
   };
 }

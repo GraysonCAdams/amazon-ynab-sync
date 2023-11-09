@@ -5,6 +5,19 @@ import { historicalSearch, watchInbox } from "./mail.js";
 
 const INBOX_NAME = process.env.IMAP_INBOX_NAME || "INBOX";
 
+export const dollarFormat = (amt) =>
+  amt.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
+
+export const dateFormat = (date) =>
+  new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+
 (async () => {
   const ynab = new YNAB();
   await ynab.init();
@@ -32,24 +45,13 @@ const INBOX_NAME = process.env.IMAP_INBOX_NAME || "INBOX";
       watchInbox(imap, ynab, box, orders);
 
       setInterval(async () => {
-        console.log(
-          "Checking for new Amazon transactions to compare transaction cache against order cache..."
-        );
-
         try {
           await ynab.fetchTransactions();
-          const matches = await ynab.matchTransactions(orders);
-          if (matches.length > 0) await ynab.updateTransactions(matches);
+          await ynab.matchAndUpdate(orders);
         } catch (e) {
           console.error(e);
         }
-
-        console.log(
-          `Status: ${ynab.getCachedTransactionCount()} Amazon transactions cached, ${
-            orders.length
-          } orders cached`
-        );
-      }, 30000);
+      }, 60000);
     });
   });
 

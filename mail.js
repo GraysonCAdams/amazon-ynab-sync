@@ -1,13 +1,14 @@
 import IMAP from "node-imap";
 import * as cheerio from "cheerio";
 import quotedPrintable from "quoted-printable";
+import { dateFormat, dollarFormat } from "./index.js";
 
 const HISTORICAL_SEARCH_NUM_EMAILS = parseInt(
   process.env.HISTORICAL_SEARCH_NUM_EMAILS
 );
 
 const isAmazonEmail = ({ subject }) =>
-  subject.includes('Your Amazon.com order') &&
+  subject.includes("Your Amazon.com order") &&
   !subject.includes("has shipped") &&
   !subject.includes("has been canceled");
 
@@ -15,7 +16,9 @@ const scanEmail = (email) => {
   const { from, subject, body, attributes } = email;
 
   if (!isAmazonEmail(email)) {
-    console.log("Not an Amazon order email (subject or body mismatch)");
+    console.log(
+      "Ignoring... not an Amazon order email (subject or body mismatch)"
+    );
     return;
   }
 
@@ -27,6 +30,8 @@ const scanEmail = (email) => {
     const amount = parseFloat(
       $('table[id$="costBreakdownRight"] td').text().trim().slice(1)
     );
+
+    if (amount === 0) return;
 
     const items = [];
     const itemRows = $('table[id$="itemDetails"] tr').toArray();
@@ -40,16 +45,16 @@ const scanEmail = (email) => {
         if (title.endsWith(",")) title = title.slice(0, -1);
         title += "..";
       }
-      if(title.length === 0) continue
+      if (title.length === 0) continue;
       items.push(title);
     }
 
-    if(items.length === 0) return
+    if (items.length === 0) return;
 
     const date = new Date(attributes.date.setHours(0, 0, 0, 0));
 
     console.info(
-      `${date} order totaling ${amount}, with ${
+      `Found ${dollarFormat(amount)} order on ${dateFormat(date)} of ${
         items.length
       } item(s): ${items.join(", ")}`
     );
@@ -182,8 +187,8 @@ export const historicalSearch = async (imap, ynab, box, orders) =>
           new Promise(async (resolve) => {
             try {
               const [email] = await fetchOrderEmails(imap.seq, seqno, seqno);
-              const order = await scanEmail(email)
-              if(order) orders.push(order)
+              const order = await scanEmail(email);
+              if (order) orders.push(order);
             } catch (e) {
               console.error(e);
             }
@@ -217,9 +222,10 @@ export const watchInbox = (imap, ynab, box, orders) => {
     try {
       const emails = await fetchOrderEmails(imap.seq, startIndex, endIndex);
       for (const email of emails) {
-        const order = scanEmail(email)
-        if(order) orders.push(order)
+        const order = scanEmail(email);
+        if (order) orders.push(order);
       }
+      await ynab.matchAndUpdate(orders);
     } catch (e) {
       console.error(e);
     }
