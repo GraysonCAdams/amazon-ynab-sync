@@ -182,7 +182,8 @@ export const historicalSearch = async (imap, ynab, box, orders) =>
           new Promise(async (resolve) => {
             try {
               const [email] = await fetchOrderEmails(imap.seq, seqno, seqno);
-              orders.push(scanEmail(email));
+              const order = await scanEmail(email)
+              if(order) orders.push(order)
             } catch (e) {
               console.error(e);
             }
@@ -216,8 +217,8 @@ export const watchInbox = (imap, ynab, box, orders) => {
     try {
       const emails = await fetchOrderEmails(imap.seq, startIndex, endIndex);
       for (const email of emails) {
-        const scannedEmail = scanEmail(email)
-        if(scannedEmail) orders.push(scannedEmail)
+        const order = scanEmail(email)
+        if(order) orders.push(order)
       }
     } catch (e) {
       console.error(e);

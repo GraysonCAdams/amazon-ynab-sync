@@ -147,6 +147,7 @@ export default class YNAB {
         return {
           id,
           memo,
+          approved: false
         };
       }),
     });
