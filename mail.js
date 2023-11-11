@@ -201,14 +201,16 @@ export const historicalSearch = async (imap, ynab, box, orders) =>
 
       console.log("Finished scanning old emails successfully!");
 
-      orders.sort(function (a, b) {
-        return new Date(a.date) - new Date(b.date);
-      });
+      if (orders.length > 0) {
+        orders.sort(function (a, b) {
+          return new Date(a.date) - new Date(b.date);
+        });
 
-      const sinceDate = orders[0].date;
-      await ynab.fetchTransactions(sinceDate);
-      const matches = await ynab.matchTransactions(orders);
-      await ynab.updateTransactions(matches);
+        const sinceDate = orders[0].date;
+        await ynab.fetchTransactions(sinceDate);
+        const matches = ynab.matchTransactions(orders);
+        await ynab.updateTransactions(matches);
+      }
 
       resolve();
     });
