@@ -97,7 +97,12 @@ const readEmail = (imapMsg, readBody = true) =>
       });
     });
     imapMsg.once("end", function (attrs) {
-      if (attributes && headers && (!readBody || body)) {
+      if (
+        attributes &&
+        headers &&
+        headers.subject.length > 0 &&
+        (!readBody || body)
+      ) {
         resolve({
           from: headers.from[0],
           subject: headers.subject[0],
