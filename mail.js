@@ -100,6 +100,7 @@ const readEmail = (imapMsg, readBody = true) =>
       if (
         attributes &&
         headers &&
+        headers.subject &&
         headers.subject.length > 0 &&
         (!readBody || body)
       ) {
