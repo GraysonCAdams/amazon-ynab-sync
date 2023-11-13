@@ -158,7 +158,7 @@ export const historicalSearch = async (imap, ynab, box, orders) =>
 
     fetch.on("message", (imapMsg, seqno) => {
       emailFetches.push(
-        new Promise(async (resolve) => {
+        new Promise(async (resolve, reject) => {
           try {
             const email = await readEmail(imapMsg, false);
             if (isAmazonEmail(email)) amazonMsgSeqNums.push(seqno);
@@ -166,10 +166,11 @@ export const historicalSearch = async (imap, ynab, box, orders) =>
             console.log(
               `${processedEmails} emails collected... Limit: ${HISTORICAL_SEARCH_NUM_EMAILS}`
             );
+            resolve();
           } catch (e) {
             console.error(e0);
+            reject();
           }
-          resolve();
         })
       );
     });
@@ -179,7 +180,7 @@ export const historicalSearch = async (imap, ynab, box, orders) =>
     });
 
     fetch.once("end", async () => {
-      await Promise.all(emailFetches);
+      await Promise.allSettled(emailFetches);
 
       const amazonEmailCount = amazonMsgSeqNums.length;
       console.info(
@@ -195,15 +196,16 @@ export const historicalSearch = async (imap, ynab, box, orders) =>
               const [email] = await fetchOrderEmails(imap.seq, seqno, seqno);
               const order = await scanEmail(email);
               if (order) orders.push(order);
+              resolve();
             } catch (e) {
               console.error(e);
+              reject();
             }
-            resolve();
           })
         );
       });
 
-      await Promise.all(emailScans);
+      await Promise.allSettled(emailScans);
 
       console.log("Finished scanning old emails successfully!");
 
