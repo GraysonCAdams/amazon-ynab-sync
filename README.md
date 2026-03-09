@@ -8,9 +8,9 @@ This **does not use Selenium** or headless browsers, or Amazon sign-in, which is
 
 ## Environment variables
 
-Please store your email credentials in environment variables or through a `.env` file. 
+Please store your email credentials in environment variables or through a `.env` file.
 
-```
+```env
 IMAP_USERNAME=email@domain.com
 IMAP_PASSWORD=p@ssw0rd123!
 IMAP_INCOMING_HOST=imap.domain.com

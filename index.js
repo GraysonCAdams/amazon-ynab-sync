@@ -1,7 +1,7 @@
 import "dotenv/config";
 import IMAP from "node-imap";
-import YNAB from "./ynab.js";
 import { historicalSearch, watchInbox } from "./mail.js";
+import YNAB from "./ynab.js";
 
 const INBOX_NAME = process.env.IMAP_INBOX_NAME || "INBOX";
 
