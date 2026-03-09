@@ -24,6 +24,7 @@ YNAB_TOKEN=yourtokenhere
 YNAB_BUDGET_ID=123456-123456-12356-12356
 YNAB_ACCEPTABLE_DATE_DIFFERENCE=6
 YNAB_ACCEPTABLE_DOLLAR_DIFFERENCE=0.5
+YNAB_TRANSACTION_TYPE=unapproved
 ```
 
 `HISTORICAL_SEARCH_NUM_EMAILS` is the number of existing emails to scan in your inbox. It is recommended to leave this at around 100-500 depending on how busy your inbox is, so that if the application restarts, it loads recent order confirmations into cache if transactions haven't posted yet.
@@ -31,6 +32,8 @@ YNAB_ACCEPTABLE_DOLLAR_DIFFERENCE=0.5
 `YNAB_ACCEPTABLE_DATE_DIFFERENCE` is the number of days a transaction out a transaction can be from the order date to be considered for a match.
 
 For `YNAB_ACCEPTABLE_DOLLAR_DIFFERENCE`, please see "Some Quirks" section.
+
+`YNAB_TRANSACTION_TYPE` optionally filters which transactions are fetched from YNAB. Set to `unapproved` to only match against unapproved transactions (faster for large budgets). Defaults to fetching all transactions.
 
 For iCloud emails, make sure to put in your iCloud email address, versus any email alias you may have set up through Apple. You will also need an app-specific password. Otherwise, please follow instructions from your email provider for IMAP.
 

@@ -44,10 +44,10 @@ export default class YNAB {
 
   fetchTransactions = async (
     sinceDate = undefined,
-    transactionType = "unapproved"
+    transactionType = process.env.YNAB_TRANSACTION_TYPE || undefined
   ) => {
     try {
-      console.log(`Fetching ${transactionType} transactions from YNAB...`);
+      console.log(`Fetching ${transactionType ?? "all"} transactions from YNAB...`);
       const { transactions, server_knowledge } = (
         await ynabAPI.transactions.getTransactions(
           this.budget.id,
@@ -58,11 +58,11 @@ export default class YNAB {
       ).data;
 
       if (transactions.length === 0) {
-        console.error(`No ${transactionType} YNAB transactions found.`);
+        console.error(`No ${transactionType ?? "all"} YNAB transactions found.`);
         return;
       } else {
         console.log(
-          `Fetched ${transactions.length} ${transactionType} transactions.`
+          `Fetched ${transactions.length} ${transactionType ?? "all"} transactions.`
         );
       }
 
